@@ -3,10 +3,10 @@
 A comparison and demo of two ways to establish trusted identity for
 nodes/workloads joining a mesh:
 
-1. **Istio's CSR flow**, via cert-manager's `istio-csr` - ztunnel (Istio
+1. **Istio's CSR flow**, via cert-manager's `istio-csr`:  ztunnel (Istio
    ambient's per-node proxy) gets a cert by presenting a CSR + K8s
    ServiceAccount token.
-2. **SPIRE's node attestation model** — a `gcp_iit` Node Attestor proves
+2. **SPIRE's node attestation model** : `gcp_iit` Node Attestor proves
    the node's identity from GCE instance metadata, then a Workload
    Attestor issues per-workload SVIDs on top of that.
 
