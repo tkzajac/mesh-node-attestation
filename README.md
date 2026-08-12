@@ -22,7 +22,7 @@ that distinction matters), and a side-by-side comparison table.
 ## Architecture at a glance
 
 Both paths use their own **fully independent simulated authority** (plain
-openssl root + intermediate — see [authority/README.md](authority/README.md)) —
+openssl root + intermediate, see [authority/README.md](authority/README.md)) —
 neither talks to a real GCP CAS. See
 [docs/COMPARISON.md](docs/COMPARISON.md) for why they're kept independent
 rather than sharing one trust root.
@@ -72,7 +72,7 @@ Both paths use their own openssl-based emulated offline root + intermediate
 **not** a real cloud CA (e.g. GCP CAS: CA pools, KMS BYOK import,
 cross-project IAM). Standing up a real production PKI hierarchy solves a
 different problem and isn't needed to demonstrate or compare how these two
-systems attest identity — both paths here simulate their own authority
+systems attest identity - both paths here simulate their own authority
 instead. See [docs/COMPARISON.md](docs/COMPARISON.md) for the full
 reasoning, and
 [istio-csr/cert-manager/issuer-cas-example.yaml](istio-csr/cert-manager/issuer-cas-example.yaml)
