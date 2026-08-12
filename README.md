@@ -16,7 +16,7 @@ entry point.
 
 **Read [docs/COMPARISON.md](docs/COMPARISON.md) first** — it's the source
 of truth: trust-chain diagrams for both paths, sequence diagrams, a
-terminology note (Istio doesn't actually do node attestation — see why
+terminology note (Istio doesn't actually do node attestation, you will see why
 that distinction matters), and a side-by-side comparison table.
 
 ## Architecture at a glance
