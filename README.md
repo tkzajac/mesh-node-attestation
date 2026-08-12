@@ -3,7 +3,7 @@
 A comparison and demo of two ways to establish trusted identity for
 nodes/workloads joining a mesh:
 
-1. **Istio's CSR flow**, via cert-manager's `istio-csr` — ztunnel (Istio
+1. **Istio's CSR flow**, via cert-manager's `istio-csr` - ztunnel (Istio
    ambient's per-node proxy) gets a cert by presenting a CSR + K8s
    ServiceAccount token.
 2. **SPIRE's node attestation model** — a `gcp_iit` Node Attestor proves
@@ -82,6 +82,6 @@ for what swapping in a real GCP CAS pool later would look like.
 
 See [instructions.md](instructions.md) — notably: no secrets or real GCP
 project IDs committed (placeholders throughout), private key material
-gitignored, and `docs/COMPARISON.md` is authoritative — if anything else
+gitignored, and `docs/COMPARISON.md` is authoritative, meaning  if anything else
 here disagrees with it, `docs/COMPARISON.md` wins and the other doc needs
 updating.
