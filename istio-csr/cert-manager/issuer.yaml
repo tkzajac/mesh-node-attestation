@@ -1,0 +1,19 @@
+# cert-manager CA Issuer backed by the emulated intermediate from
+# authority/istio/. The Secret referenced below is NOT created by this
+# manifest - create it from the generated key material first:
+#
+#   kubectl create secret tls istio-csr-ca \
+#     --cert=authority/istio/intermediate-ca.crt \
+#     --key=authority/istio/intermediate.key \
+#     -n cert-manager
+#
+# See ../README.md for the full sequence. Namespace here matches the
+# default cert-manager install namespace - adjust if yours differs.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: istio-csr-ca-issuer
+  namespace: cert-manager
+spec:
+  ca:
+    secretName: istio-csr-ca

@@ -1,0 +1,67 @@
+# SPIRE Server StatefulSet. Mounts authority/spire/'s intermediate cert+key
+# (as the "spire-server-upstream-ca" Secret - see ../README.md) at
+# /run/spire/authority, matching UpstreamAuthority "disk" in configmap.yaml.
+#
+# Single replica for this demo - a production deployment would typically
+# run SPIRE Server HA (multiple replicas); not replicated here since the
+# point of this repo is the attestation flow, not HA operations.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: spire-server
+  namespace: spire
+spec:
+  serviceName: spire-server
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spire-server
+  template:
+    metadata:
+      labels:
+        app: spire-server
+    spec:
+      serviceAccountName: spire-server
+      containers:
+        - name: spire-server
+          image: ghcr.io/spiffe/spire-server:1.9.6
+          args: ["-config", "/run/spire/config/server.conf"]
+          ports:
+            - containerPort: 8081
+              name: grpc
+            - containerPort: 8080
+              name: health
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-data
+              mountPath: /run/spire/data
+            - name: spire-authority
+              mountPath: /run/spire/authority
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+      volumes:
+        - name: spire-config
+          configMap:
+            name: spire-server-config
+        - name: spire-authority
+          secret:
+            # Created from authority/spire/intermediate-ca.crt + .key -
+            # see ../README.md step 2.
+            secretName: spire-server-upstream-ca
+  volumeClaimTemplates:
+    - metadata:
+        name: spire-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

@@ -1,0 +1,46 @@
+# Helm values for the cert-manager-csi-driver's sibling chart, istio-csr
+# (repo: cert-manager/istio-csr). Install with:
+#
+#   helm upgrade -i -n cert-manager istio-csr jetstack/cert-manager-istio-csr \
+#     -f istio-csr/istio-csr/values.yaml
+#
+# See ../README.md for the full sequence and prerequisites (cert-manager +
+# the Issuer in ../cert-manager/issuer.yaml must exist first).
+
+app:
+  # Trust domain must match what's configured on the Istio side
+  # (meshConfig.trustDomain in ../istio/istiod-values.yaml).
+  tls:
+    trustDomain: "cluster.local"
+    # istio-csr's own serving cert is issued off the same Issuer, so its
+    # gRPC endpoint is itself trusted by anything that trusts our emulated
+    # root - authority/istio/root-ca.crt.
+    certificateDNSNames:
+      - cert-manager-istio-csr.cert-manager.svc
+      - cert-manager-istio-csr.cert-manager.svc.cluster.local
+
+  certmanager:
+    namespace: cert-manager
+    issuer:
+      name: istio-csr-ca-issuer
+      kind: Issuer
+      group: cert-manager.io
+
+  # Distribute authority/istio/root-ca.crt to a ConfigMap in every ambient
+  # namespace so ztunnel can validate the chain up to our emulated root
+  # without a manual copy step. "istio.io/dataplane-mode=ambient" is
+  # ambient's namespace label.
+  controller:
+    configmapNamespaceSelector: "istio.io/dataplane-mode=ambient"
+
+  server:
+    maxCertificateDuration: 24h
+    # Required for ambient mode: without this, istio-csr rejects every
+    # cert request ztunnel makes on behalf of the workloads it's proxying
+    # for. "istio-system/ztunnel" is istio-csr's own documented example
+    # for exactly this case - ztunnel authenticates using its own
+    # identity, then requests certs for the identity it impersonates. See
+    # ../../docs/COMPARISON.md's "Real code" section for the actual
+    # verification logic this triggers (node-colocation check, not a
+    # blank check).
+    caTrustedNodeAccounts: "istio-system/ztunnel"

@@ -1,0 +1,57 @@
+# SPIRE Agent DaemonSet - one per node, matching the Node Attestor model
+# (each node independently attests itself via gcp_iit). Exposes the
+# Workload API socket via a hostPath so workloads on the same node can
+# reach it - a real deployment would typically use a CSI driver instead
+# (spiffe-csi-driver) for that mount; kept as a plain hostPath here to
+# minimize moving parts for a demo.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spire-agent
+  namespace: spire
+spec:
+  selector:
+    matchLabels:
+      app: spire-agent
+  template:
+    metadata:
+      labels:
+        app: spire-agent
+    spec:
+      hostPID: true
+      hostNetwork: true
+      serviceAccountName: spire-agent
+      containers:
+        - name: spire-agent
+          image: ghcr.io/spiffe/spire-agent:1.9.6
+          args: ["-config", "/run/spire/config/agent.conf"]
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-bundle
+              mountPath: /run/spire/bundle
+              readOnly: true
+            - name: spire-sockets
+              mountPath: /run/spire/sockets
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+      volumes:
+        - name: spire-config
+          configMap:
+            name: spire-agent-config
+        - name: spire-bundle
+          configMap:
+            # Created from authority/spire/root-ca.crt - see
+            # ../README.md step 2.
+            name: spire-bundle
+        - name: spire-sockets
+          hostPath:
+            path: /run/spire/sockets
+            type: DirectoryOrCreate

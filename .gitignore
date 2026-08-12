@@ -1,0 +1,7 @@
+# Emulated CA private key material - test-only, but never commit it anyway.
+authority/**/*.key
+authority/**/*.pem
+authority/**/*.srl
+authority/**/*.csr
+
+.DS_Store

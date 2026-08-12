@@ -1,0 +1,37 @@
+# Helm values for the `istiod` chart, ambient profile, CA delegated to
+# istio-csr instead of istiod's built-in self-signed CA. Install with:
+#
+#   helm upgrade -i istiod istio/istiod -n istio-system \
+#     --set profile=ambient \
+#     -f istio-csr/istio/istiod-values.yaml
+#
+# Prerequisite: cert-manager + istio-csr already installed and healthy
+# (../cert-manager/issuer.yaml applied, ../istio-csr/values.yaml deployed)
+# - istiod will fail to start otherwise, since it delegates all CA
+# operations to istio-csr's gRPC endpoint.
+#
+# `--set profile=ambient` (not baked into this file) layers in the ambient
+# preset from the chart itself - check `helm show values istio/istiod`
+# against the chart version you're pulling if any key here doesn't apply,
+# since exact value paths shift across Istio releases.
+global:
+  caAddress: cert-manager-istio-csr.cert-manager.svc:443
+
+pilot:
+  env:
+    # Disable istiod's own CA entirely - istio-csr is now the CA.
+    ENABLE_CA_SERVER: "false"
+  # Mount the root CA (authority/istio/root-ca.crt, distributed as the
+  # istio-csr-ca-root-cert ConfigMap - see ../README.md) so istiod itself
+  # can validate certs chaining to our emulated root.
+  volumes:
+    - name: istio-csr-root-ca
+      configMap:
+        name: istio-csr-ca-root-cert
+  volumeMounts:
+    - name: istio-csr-root-ca
+      mountPath: /var/run/secrets/istio-csr
+      readOnly: true
+
+meshConfig:
+  trustDomain: cluster.local

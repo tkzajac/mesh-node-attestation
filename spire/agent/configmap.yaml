@@ -1,0 +1,57 @@
+# SPIRE Agent config. NodeAttestor is gcp_iit - the agent-side plugin
+# calls the local GCE metadata server for a signed instance identity
+# document, which only exists on real GCE/GKE nodes. See
+# ../../docs/spire/DESIGN.md for why this is the point of this demo, and
+# ../README.md for the GKE prerequisite.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-agent-config
+  namespace: spire
+data:
+  agent.conf: |
+    agent {
+      data_dir = "/run/spire"
+      log_level = "INFO"
+      server_address = "spire-server"
+      server_port = "8081"
+      socket_path = "/run/spire/sockets/agent.sock"
+      trust_domain = "mesh-node-attestation.test"
+      # Bootstrapped once from authority/spire/root-ca.crt - see
+      # ../README.md step 2.
+      trust_bundle_path = "/run/spire/bundle/bundle.crt"
+    }
+
+    plugins {
+      NodeAttestor "gcp_iit" {
+        plugin_data {}
+      }
+
+      KeyManager "memory" {
+        plugin_data {}
+      }
+
+      WorkloadAttestor "k8s" {
+        plugin_data {
+          skip_kubelet_verification = true
+          # GKE nodes commonly run the systemd cgroup driver, which
+          # produces different /proc/<pid>/cgroup path formats than the
+          # cgroupfs driver (e.g. "kubepods.slice/kubepods-burstable.slice/
+          # kubepods-burstable-pod<uid>.slice/cri-containerd-<id>.scope" vs
+          # "kubepods/burstable/pod<uid>/<id>"). SPIRE's k8s attestor tries
+          # multiple container-ID finders automatically, but this flag logs
+          # which one actually matched (or why none did) - see
+          # ../../docs/spire/DESIGN.md's "Proving the k8s WorkloadAttestor
+          # handles your cgroup driver" section and ../README.md step 6.
+          verbose_container_locator_logs = true
+        }
+      }
+    }
+
+    health_checks {
+      listener_enabled = true
+      bind_address = "0.0.0.0"
+      bind_port = "8080"
+      live_path = "/live"
+      ready_path = "/ready"
+    }

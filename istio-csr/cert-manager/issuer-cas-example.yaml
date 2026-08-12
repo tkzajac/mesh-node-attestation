@@ -1,0 +1,32 @@
+# ILLUSTRATIVE ONLY - not applied by any README walkthrough in this repo,
+# not wired to istio-csr's values.yaml by default. Shows the shape of
+# swapping the emulated CA Issuer (../cert-manager/issuer.yaml) for a real
+# GCP CAS pool, without changing anything else in this path's chain
+# (istio-csr, istiod, ztunnel all stay identical either way).
+#
+# Requires the `cert-manager-google-cas-issuer` controller installed
+# separately (github.com/jetstack/google-cas-issuer) - it is NOT part of
+# plain cert-manager and is not installed by ../README.md.
+#
+# To actually use this instead of the emulated Issuer:
+#   1. Install cert-manager-google-cas-issuer's CRDs + controller.
+#   2. Grant the credentials below (a GCP SA key, or Workload Identity
+#      binding) a `privateca.certificateRequester`-equivalent role on the
+#      target CA pool.
+#   3. Point istio-csr/istio-csr/values.yaml's `app.certmanager.issuer` at
+#      this resource instead: `group: cas-issuer.jetstack.io`,
+#      `kind: GoogleCASClusterIssuer`, `name: <this resource's name>`.
+#   4. Skip authority/generate-*.sh + ../README.md step 1-2 entirely for
+#      this path - there's no emulated intermediate to generate or load
+#      when CAS is the real backing authority.
+apiVersion: cas-issuer.jetstack.io/v1beta1
+kind: GoogleCASClusterIssuer
+metadata:
+  name: istio-csr-cas-issuer-example
+spec:
+  project: <GCP_PROJECT_ID>            # your own GCP project, never a real ID in this repo
+  location: <REGION>                   # the CA pool's region
+  caPoolId: <CA_POOL_ID>                # the CA pool's ID, not the CA resource's ID
+  credentials:
+    name: googlecasissuer-credentials  # a Secret holding a GCP SA key JSON,
+    key: credentials.json              # created separately - not part of this repo

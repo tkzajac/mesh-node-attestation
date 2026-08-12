@@ -1,0 +1,67 @@
+# SPIRE Server config. UpstreamAuthority is "disk", pointed at the emulated
+# intermediate from authority/spire/ (mounted via the Secret created in
+# ../../README.md's walkthrough) - NOT the gcp_cas plugin a production
+# deployment would more likely use to talk to a real GCP CAS pool.
+# NodeAttestor is gcp_iit, which needs real GCE instance metadata - see
+# ../README.md's GKE prerequisite.
+#
+# <GCP_PROJECT_ID> is a placeholder - never fill this in with a real
+# project ID in anything committed to this repo.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-server-config
+  namespace: spire
+data:
+  server.conf: |
+    server {
+      bind_address = "0.0.0.0"
+      bind_port = "8081"
+      trust_domain = "mesh-node-attestation.test"
+      data_dir = "/run/spire/data"
+      log_level = "INFO"
+      ca_key_type = "ec-p256"
+      ca_subject = {
+        country = ["US"]
+        organization = ["mesh-node-attestation-test"]
+        common_name = "SPIRE Server CA (mesh-node-attestation demo)"
+      }
+    }
+
+    plugins {
+      DataStore "sql" {
+        plugin_data {
+          database_type = "sqlite3"
+          connection_string = "/run/spire/data/datastore.sqlite3"
+        }
+      }
+
+      NodeAttestor "gcp_iit" {
+        plugin_data {
+          # Restrict which GCP project's instances can attest as nodes in
+          # this trust domain - fill in before deploying to a real cluster.
+          projectid_allow_list = ["<GCP_PROJECT_ID>"]
+        }
+      }
+
+      KeyManager "disk" {
+        plugin_data {
+          keys_path = "/run/spire/data/keys.json"
+        }
+      }
+
+      UpstreamAuthority "disk" {
+        plugin_data {
+          cert_file_path = "/run/spire/authority/intermediate-ca.crt"
+          key_file_path  = "/run/spire/authority/intermediate.key"
+        }
+      }
+    }
+
+    health_checks {
+      listener_enabled = true
+      bind_address = "0.0.0.0"
+      bind_port = "8080"
+      live_path = "/live"
+      ready_path = "/ready"
+    }
