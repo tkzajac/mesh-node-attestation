@@ -1,4 +1,4 @@
-# mesh-node-attestation
+# mesh-attestation
 
 A comparison and demo of two ways to establish trusted identity for
 nodes/workloads joining a mesh:
